@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Taberna del Tablero | Chat de Juegos</title>
+    <style>
+        /* --- ESTILOS BASE Y FONDO --- */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #E0E0E0;
+
+            /* Fondo: Asegúrate de que 'background.jpg' esté en la misma carpeta que app.py */
+            background-color: #2c2c2c;
+            background-image: url("background.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* --- CONTENEDOR PRINCIPAL (LAYOUT) --- */
+        #main-layout {
+            display: flex;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            padding: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- COLUMNA 1: SIDEBAR (RECOMENDACIONES) --- */
+        #sidebar-column {
+            flex: 1;
+            min-width: 250px;
+            max-width: 350px;
+            padding: 15px;
+            box-sizing: border-box;
+            background: rgba(40, 40, 40, 0.75);
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #sidebar-column h2 {
+            color: #f0c050;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .saved-game-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .saved-game-card strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #FFD700;
+        }
+
+        .saved-game-card small {
+            display: block;
+            margin-top: 5px;
+            color: #AAAAAA;
+        }
+
+        /* --- COLUMNA 2: CHAT CENTRAL FLOTANTE --- */
+        #chat-column {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            /* CRUCIAL: Apila mensajes y input */
+            padding: 20px;
+            box-sizing: border-box;
+            align-items: center;
+            justify-content: flex-start;
+            /* Añadimos un fondo muy sutil para la columna de chat */
+            background: rgba(20, 20, 20, 0.1);
+        }
+
+        /* Área de mensajes (la zona de scrolleo) */
+        #messages {
+            flex-grow: 1;
+            /* ¡Ocupa todo el espacio restante! Empuja el input hacia abajo. */
+            width: 100%;
+            max-width: 800px;
+
+            /* RESTAURACIÓN DEL SCROLL: Altura definida y overflow */
+            height: auto;
+            overflow-y: auto;
+
+            padding: 15px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+        }
+
+        /* Estilos de los mensajes */
+        .msg {
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 15px;
+            max-width: 70%;
+            line-height: 1.5;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Colores más oscuros que elegiste */
+        .user {
+            background: rgba(14, 99, 16, 0.7);
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .robot {
+            background: rgba(3, 56, 100, 0.7);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Contenedor del input centrado abajo */
+        #input-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: center;
+            padding-top: 10px;
+        }
+
+        #input-box {
+            display: flex;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px;
+        }
+
+        #mensaje {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            background: transparent;
+            color: white;
+        }
+
+        #mensaje::placeholder {
+            color: #a0a0a0;
+        }
+
+        button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #673ab7;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #5e35b1;
+        }
+
+        #chat-column h1 {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="main-layout">
+
+        <div id="sidebar-column">
+            <h2>Juegos Guardados 💾</h2>
+
+            {% if recomendaciones %}
+            {% for rec in recomendaciones %}
+            <div class="saved-game-card">
+                <strong>{{ rec.name | safe }}</strong>
+                <p>{{ rec.description }}</p>
+                <small>{{ rec.stats }}</small>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>Aún no has guardado ninguna recomendación. ¡Pregúntale al Robot!</p>
+            {% endif %}
+
+        </div>
+
+        <div id="chat-column">
+
+            <div id="messages">
+                {% for entry in historial %}
+                <div class="msg user">{{ entry.user | safe }}</div>
+                <div class="msg robot">{{ entry.robot | safe }}</div>
+                {% endfor %}
+            </div>
+
+            <div id="input-container">
+                <div id="input-box">
+                    <input id="mensaje" type="text" placeholder="Escribe tu consulta de juegos..." />
+                    <button id="boton-enviar">Enviar</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById("messages");
+
+        function agregarMensaje(texto, clase) {
+            const div = document.createElement("div");
+            div.className = "msg " + clase;
+            div.innerHTML = texto.replace(/\n/g, '<br>');
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function enviar() {
+            const inputElement = document.getElementById("mensaje");
+            const texto = inputElement.value.trim();
+            if (!texto) return;
+
+            agregarMensaje(texto, "user");
+            inputElement.value = "";
+
+            const loadingMsg = document.createElement("div");
+            loadingMsg.className = "msg robot loading";
+            loadingMsg.id = "loading-msg";
+            loadingMsg.textContent = "El Robot está consultando su Grimorio...";
+            messagesDiv.appendChild(loadingMsg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const resp = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mensaje: texto })
+                });
+
+                if (!resp.ok) {
+                    const errorData = await resp.json().catch(() => ({ error: `Error HTTP: ${resp.status}` }));
+                    throw new Error(errorData.error || `Error HTTP: ${resp.status}`);
+                }
+
+                const data = await resp.json();
+
+                if (data.respuesta) {
+                    agregarMensaje(data.respuesta, "robot");
+                } else if (data.error) {
+                    agregarMensaje("Error del servidor: " + data.error, "robot");
+                }
+
+            } catch (error) {
+                console.error("Error en la comunicación con el servidor:", error);
+                agregarMensaje(`❌ Error de conexión: ${error.message || 'No se pudo contactar al servidor.'}`, "robot");
+            } finally {
+                const loadingMsgFinal = document.getElementById("loading-msg");
+                if (loadingMsgFinal) loadingMsgFinal.remove();
+            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        document.getElementById("boton-enviar").addEventListener("click", enviar);
+
+        document.getElementById("mensaje").addEventListener("keypress", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                enviar();
+            }
+        });
+    </script>
+
+</body>
+
+</html>
